@@ -1,0 +1,12 @@
+<%@ Page Title="Assignment3 - TicTacToe" Language="C#" AutoEventWireup="true" CodeBehind="Default.aspx.cs" Inherits="Assignment3._Default" %>
+
+<form id="form1" runat="server">
+    <asp:Literal ID="GameBoardLiteral" runat="server" Text=""></asp:Literal>
+    <br />
+    <br />
+    <asp:Literal ID="LiteralPlayer" runat="server" Text=""></asp:Literal>
+    <br />
+    <br />
+    <asp:TextBox ID="TextBox1" runat="server" Width="54px"></asp:TextBox>
+    <asp:Button ID="ButtonMove" runat="server" Text="Move..." Width="104px" OnClick="ButtonMove_Click" />
+</form>
