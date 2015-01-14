@@ -1,0 +1,231 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+
+namespace Assignment3
+{
+    public partial class _Default : System.Web.UI.Page
+    {
+        //declare constant field variables
+        const int Size = 3;
+        const int Crosses = -1;
+        const int Naughts = 1;
+        const int Empty = 0;
+        const int NoWinner = 0;
+
+        //declare other field variables
+        int[,] GameBoard = new int[Size, Size];
+        int PlayerTurn = Crosses;
+        int Fields_taken = 0;
+
+        protected void Page_Load(object sender, EventArgs e)
+        {
+            if (IsPostBack)
+            {//restore state of game
+                GameBoard = (int[,])Session["GameBoard"];
+                Fields_taken = (int)ViewState["Fields_taken"];
+                PlayerTurn = (int)ViewState["PlayerTurn"];
+            }// end postpack 
+
+            // tell player its their turn
+            if (PlayerTurn == Crosses)
+            {
+                LiteralPlayer.Text = "Crosses... Your Turn";
+            }
+            else
+            {
+                LiteralPlayer.Text = "Naughts... Your Turn";
+            }
+
+
+        }//end page load
+
+        protected void Page_Prerender(object sender, EventArgs e)
+        {//pass on game state
+            Session.Add("GameBoard", GameBoard);
+            ViewState.Add("Fields_taken", Fields_taken);
+            ViewState.Add("PlayerTurn", PlayerTurn);
+
+            display_board(); //call method to build game board
+        }
+
+        protected void display_board() //method that builds the game board
+        {
+            int i, j;
+            GameBoardLiteral.Text = "<table border=\"3\" cellpadding=\"3\" cellspacing=\"3\">"; // table start
+            for (i = 0; i < Size; i++) //loop rows
+            {
+                GameBoardLiteral.Text = GameBoardLiteral.Text + "<tr>"; // start row
+                for (j = 0; j < Size; j++) //loop cells
+                {
+                    GameBoardLiteral.Text = GameBoardLiteral.Text + "<td width=30 align=\"center\">"; // start cell
+                    if (GameBoard[i, j] == Crosses)
+                        GameBoardLiteral.Text = GameBoardLiteral.Text + "X"; // mark crosses locations
+
+                    else if (GameBoard[i, j] == Naughts)
+                        GameBoardLiteral.Text = GameBoardLiteral.Text + "O"; // mark naughts locations
+
+                    else
+                        GameBoardLiteral.Text = GameBoardLiteral.Text + "&nbsp;"; // put blank space where no move has been made
+
+                    GameBoardLiteral.Text = GameBoardLiteral.Text + "</td>"; // end cell
+                }
+                GameBoardLiteral.Text = GameBoardLiteral.Text + "</tr>"; // end row
+            }
+            GameBoardLiteral.Text = GameBoardLiteral.Text + "</table>"; // end table
+        }
+
+        protected void ButtonMove_Click(object sender, EventArgs e)
+        {
+            //declare variables
+            int PlayerMove = 0, q, w, winner;
+            //read number
+            try // try/catch checks for non-integer inputs
+            {
+                PlayerMove = System.Convert.ToInt32(TextBox1.Text);
+
+                if (PlayerMove > Size * Size) //catches cells outside of gameboard
+                {
+                    LiteralPlayer.Text = "Invalid Move... Please choose again";
+                    return;
+                }
+                //determine board position
+                q = (PlayerMove - 1) / Size;
+                w = (PlayerMove - (q * Size) - 1);
+                if (GameBoard[q, w] != Empty)
+                {//checks if cell is available
+                    LiteralPlayer.Text = "Invalid Move... Please choose again";
+                    return;
+                }
+                //if this point is reached place the players mark in selected cell
+                GameBoard[q, w] = PlayerTurn;
+                Fields_taken++; // turn counter tick
+                winner = CheckForWin(); //run win logic
+                if (winner == Crosses)
+                {//win crosses
+                    LiteralPlayer.Text = "Crosses Wins";
+                    ButtonMove.Visible = false; //remove button and end game
+                }//end win crosses
+                else if (winner == Naughts)
+                {//win naughts
+                    LiteralPlayer.Text = "Naughts Wins";
+                    ButtonMove.Visible = false; //remove button and end game
+                }//end win naughts
+                else if (Fields_taken == Size * Size)
+                {//draw
+                    LiteralPlayer.Text = "Draw Game";
+                    ButtonMove.Visible = false; //remove button and end game
+                }//end draw
+                else // game is not over, continue game
+                {
+                    PlayerTurn = PlayerTurn * -1; // change turn
+                    if (PlayerTurn == Crosses)
+                    {
+                        LiteralPlayer.Text = "Crosses... Your Turn";
+                    }
+                    else
+                    {
+                        LiteralPlayer.Text = "Naughts... Your Turn";
+                    }
+                }
+            }
+            catch
+            {// catches non-numbers
+                LiteralPlayer.Text = "Invalid Move... Please choose again";
+                return;
+            }
+        }
+        protected int CheckForWin() //method for win logic from BA371
+        {
+            int q = 2, w = 2, i, j, count = 0;
+            byte stop = 0;
+
+            #region Horizontal
+            if (stop == 0) //test horizontals
+            {
+                for (i = 2; i >= 0; i--)
+                {
+                    for (j = 2; j >= 0; j--)
+                    {
+                        count = count + GameBoard[i, j];
+                    }
+                    if (count == PlayerTurn * 3)
+                    {
+                        stop++;
+                        return PlayerTurn;
+                    }
+                    count = 0; //reset test variable 
+                }//end horizontals
+            #endregion
+                #region Vertical
+                if (stop == 0) //test verticals
+                {
+                    for (j = 2; j >= 0; j--)
+                    {
+                        for (i = 2; i >= 0; i--)
+                        {
+                            count = count + GameBoard[i, j];
+                        }
+                        if (count == PlayerTurn * 3)
+                        {
+                            stop++;
+                            return PlayerTurn;
+                        }
+                        count = 0; //reset test variable
+                    }//end verticals
+                #endregion
+                    #region diagnal: bottom right moving up left
+                    if (stop == 0) // test bottom right up diagnal
+                    {
+                        while (q >= 0 & w >= 0)
+                        {
+                            count = count + GameBoard[q, w];
+                            q--;
+                            w--;
+                        }
+                        if (count == PlayerTurn * 3)
+                        {
+                            stop++;
+                            return PlayerTurn;
+                        }
+                        count = 0; //reset test variable                       
+                    #endregion
+                        #region diagnal: bottom left moving up right
+                        q = 2;
+                        w = 0;
+                        if (stop == 0)
+                        {
+                            while (q >= 0 & w < 3) // test bottom left up diagnals
+                            {
+                                count = count + GameBoard[q, w];
+                                q--;
+                                w++;
+                            }
+                            if (count == PlayerTurn * 3)
+                            {
+                                stop++;
+                                return PlayerTurn;
+                            }
+                        #endregion
+                            #region Null Returns
+                            else
+                                return 0;
+                        }//end diaglnals
+                        else
+                            return 0;
+                    }
+                    else
+                        return 0;
+                }
+                else
+                    return 0;
+            }
+            else
+                return 0;
+                            #endregion
+        }
+    }
+}
